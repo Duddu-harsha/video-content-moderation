@@ -1,0 +1,114 @@
+🎥 AI-Powered Automated Video Content Moderation System
+A feature-based, scalable approach using Kinetics-400
+
+🧩 Project Overview
+In an age of endless user-generated video content, manually moderating videos for harmful material is no longer scalable. Our project tackles this challenge by building an AI-driven, automated video content moderation system—capable of detecting inappropriate or harmful segments within videos through intelligent analysis, all while minimizing human involvement.
+
+We designed a feature-rich pipeline (no deep learning dependency) to extract visual, motion, and structural characteristics from videos. It classifies content as Safe or Unsafe, and further provides risk-level scoring and confidence values to help content teams prioritize human review when necessary.
+
+📥 Dataset: Kinetics-400 (Curated)
+We built our system on top of the Kinetics-400 dataset, a large-scale action recognition benchmark consisting of ~400 action classes and over 300K videos from YouTube.
+
+But instead of using raw videos:
+
+We curated a dataset by selecting 5 representative samples per category.
+
+Developed scripts to download and trim videos using metadata (youtube_id, time_start, time_end) from CSV.
+
+Renamed them systematically as Video_0001.mp4, Video_0002.mp4, etc.
+
+Built tools to verify integrity, check for missing or corrupt videos, and ensure a clean, organized video dataset.
+
+Tools/scripts used:
+
+download_kinetics.py: Downloads and trims clips from YouTube
+
+missing_videos.py: Identifies missing video files in expected sequences
+
+val_sampled_5_per_category.csv: The CSV that guided sampling and download
+
+This preprocessing allowed us to create a highly controlled and diverse dataset, perfect for training a robust video classifier.
+
+🛠️ Technical Workflow
+Our system architecture is fully modular and built for high interpretability and computational efficiency:
+
+🔄 1. Frame Sampling
+Videos are sampled at regular intervals (e.g., 1 frame per second) to capture temporal context efficiently.
+
+🧠 2. Feature Extraction
+From the selected frames, we extract multiple handcrafted features:
+
+Motion Features: Optical flow statistics
+
+Color Statistics: Mean, standard deviation, skewness, entropy
+
+Edge Features: Canny edges and Sobel-based orientation histograms
+
+Texture & Keypoints: HOG and ORB descriptors
+
+Scene Change Rate: Frame-to-frame histogram differences
+
+Metadata: FPS, resolution, duration, aspect ratio
+
+🤖 3. Model Training
+We train a RandomForestClassifier using these features:
+
+GridSearchCV for hyperparameter tuning
+
+Stratified train-test splits
+
+Evaluation using accuracy, F1-score, confusion matrix, AUC-ROC
+
+Trained model saved as video_classifier_v2.pkl
+
+🔍 4. Inference
+Analyze videos individually or in bulk
+
+Return classifications (Safe / Unsafe), confidence scores, and risk levels (High / Medium / Low)
+
+Results saved as CSVs for easy integration into moderation workflows
+
+⚠️ Challenges We Overcame
+
+Challenge	Our Solution
+Dataset Quality & Size	Trimmed, renamed, validated 2000+ videos from Kinetics-400
+Computational Load	Frame sampling + parallel feature extraction + caching
+Ambiguity in Content	Multi-modal feature analysis (color + motion + edge + metadata)
+False Positives	Confidence thresholds + feature ensembles
+Scalability	Batch processing with error handling + modular scripts
+Privacy & Security	Minimal human exposure; structured data output
+🌟 Why This System Matters
+✅ Protects Moderators: Reduces human exposure to traumatic content
+
+🚀 Scalable: CPU-only pipeline, easily parallelized for large datasets
+
+🔍 Transparent: Confidence scores make the system auditable
+
+🔧 Easy to Integrate: CSV-based output can plug into existing systems
+
+🧠 Context-Aware: Frame-by-frame analysis catches subtle harmful content
+
+📁 Project Files & Tools
+
+File	Description
+download_kinetics.py	Downloads and trims Kinetics-400 clips
+missing_videos.py	Detects missing or skipped downloads
+train_model.py	Extracts features and trains model
+test_video_classifier.py	Performs inference on single or batch videos
+get_duration.py	Calculates durations for dataset verification
+categorynumcalc.py	Counts distinct content categories
+videoselectioncode.py	Samples 5 videos per category
+video_classifier_v2.pkl	Trained classifier
+val_sampled_5_per_category.csv	Processed input dataset
+🧪 Sample Use Case
+bash
+Copy
+Edit
+# Train the model
+python train_model.py
+
+# Analyze a folder of videos
+python test_video_classifier.py --folder path/to/folder --model video_classifier_v2.pkl
+
+# Get results
+# => analysis_results.csv
