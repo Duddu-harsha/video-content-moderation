@@ -1,84 +1,61 @@
 # video-content-moderation😃
-AI model for automated video content moderation with trimming
+🎥 AI-Powered Video Content Moderation & Trimming
+An automated system for classifying videos as Safe or Unsafe using machine learning, with support for batch analysis and trimming based on content moderation results.
+
 🚀 How to Use
 1. Train the Model
-python train_model.py
-Reads video metadata and labels from val.csv
+Run train_model.py.
 
-Extracts features
-
+It reads video metadata and labels from val.csv
+Extracts various video features
 Trains a RandomForestClassifier with hyperparameter tuning
-
-Saves model as video_classifier_v2.pkl
+Saves the model as video_classifier_v2.pkl
 
 2. Analyze a Single Video
+Use test_video_classifier.py with the --video argument to classify a single video using the saved model.
 
-python test_video_classifier.py --video path/to/video.mp4 --model video_classifier_v2.pkl
 3. Batch Analyze a Folder
+Use test_video_classifier.py with the --folder argument to process all videos in a folder and save the results in a CSV file.
 
-python test_video_classifier.py --folder path/to/folder --model video_classifier_v2.pkl --output results.csv
 🧠 Feature Extraction
-The system extracts a variety of features from videos:
-
+The system extracts these features from videos:
 HOG (Histogram of Oriented Gradients)
-
-ORB (Keypoints & Descriptors)
-
-Motion (Optical Flow)
-
-Color statistics (Mean, Std, Skewness, Entropy)
-
-Edge features (Canny edge & Sobel histogram)
-
+ORB (Keypoints and Descriptors)
+Motion analysis using Optical Flow
+Color statistics: mean, standard deviation, skewness, entropy
+Edge features: Canny edge and Sobel histogram
 Scene change rate
 
-Metadata (fps, resolution, duration, etc.)
+Metadata: fps, resolution, duration, etc.
 
-📊 Dataset
-Stored in val.csv
+📊 Dataset Format
+Data should be stored in val.csv with the following columns:
 
-Expected columns:
+Video_id: filename without extension
 
-Video_id – ID (filename without extension)
+Label: Safe or Unsafe
 
-Label – Safe or Unsafe
-
-Category – (used in categorynumcalc.py and videoselectioncode.py)
+Category: category label used in utility scripts
 
 📌 Utilities
-categorynumcalc.py: Counts unique categories in the dataset
+categorynumcalc.py: Counts the number of unique categories
+get_duration.py: Computes video durations in a folder
+videoselectioncode.py: Selects 5 videos per category for analysis
 
-get_duration.py: Computes durations of videos in a folder
+✅ Inference Example
+To make predictions:
+Load the model with joblib
+Extract features from a video using extract_video_features
+Use the model to predict the label and confidence
+Output: "Safe" or "Unsafe" along with a confidence score
 
-videoselectioncode.py: Picks 5 videos per category for sampling
-
-✅ Example Inference Code
-python
-Copy
-Edit
-from test_video_classifier import extract_video_features
-import joblib
-
-model = joblib.load("video_classifier_v2.pkl")
-features = extract_video_features("your_video.mp4")
-prediction = model.predict([features])[0]
-confidence = model.predict_proba([features])[0, 1]
-
-print(f"Prediction: {'Unsafe' if prediction == 1 else 'Safe'}")
-print(f"Confidence: {confidence:.2f}")
-📌 Requirements
-Python 3.8+
-
+📦 Requirements
+Python 3.8 or higher
 OpenCV
-
 NumPy
-
 Pandas
-
 Scikit-learn
-
 Joblib
-
 Tqdm
 
                   WRITE UP 
