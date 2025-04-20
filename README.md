@@ -1,4 +1,4 @@
-# video-content-moderation
+# video-content-moderation😃
 AI model for automated video content moderation with trimming
 🚀 How to Use
 1. Train the Model
