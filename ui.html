@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Upload Studio</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f7faff;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(80, 180, 255, 0.18) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 80, 120, 0.13) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(80, 120, 255, 0.12) 0%, transparent 50%);
+            animation: backgroundShift 20s ease-in-out infinite;
+            z-index: -2;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(45deg, transparent 30%, rgba(80, 180, 255, 0.07) 50%, transparent 70%),
+                linear-gradient(-45deg, transparent 30%, rgba(255, 80, 120, 0.07) 50%, transparent 70%);
+            animation: gradientShift 15s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        @keyframes backgroundShift {
+            0%, 100% { 
+                background: 
+                    radial-gradient(circle at 20% 80%, rgba(80, 180, 255, 0.18) 0%, transparent 50%),
+                    radial-gradient(circle at 80% 20%, rgba(255, 80, 120, 0.13) 0%, transparent 50%),
+                    radial-gradient(circle at 40% 40%, rgba(80, 120, 255, 0.12) 0%, transparent 50%);
+            }
+            50% { 
+                background: 
+                    radial-gradient(circle at 80% 20%, rgba(80, 180, 255, 0.22) 0%, transparent 50%),
+                    radial-gradient(circle at 20% 80%, rgba(255, 80, 120, 0.18) 0%, transparent 50%),
+                    radial-gradient(circle at 60% 60%, rgba(80, 120, 255, 0.16) 0%, transparent 50%);
+            }
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.1); }
+        }
+
+        .main-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+        }
+
+        .upload-card {
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(80, 180, 255, 0.13);
+            border-radius: 24px;
+            padding: 48px;
+            max-width: 720px;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 
+                0 32px 64px rgba(80, 180, 255, 0.10),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            animation: cardFloat 6s ease-in-out infinite;
+        }
+
+        @keyframes cardFloat {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-8px) rotate(0.5deg); }
+        }
+
+        .upload-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #50b4ff, #ff5078, transparent);
+            animation: borderGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes borderGlow {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #1e293b 0%, #50b4ff 60%, #ff5078 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 16px;
+            letter-spacing: -0.02em;
+            animation: titlePulse 4s ease-in-out infinite;
+        }
+
+        @keyframes titlePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .subtitle {
+            color: #3b4a5a;
+            font-size: 1.25rem;
+            font-weight: 400;
+            max-width: 400px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .upload-zone {
+            border: 2px dashed #b6e3ff;
+            border-radius: 20px;
+            padding: 80px 40px;
+            margin-bottom: 32px;
+            background: rgba(80, 180, 255, 0.04);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+        }
+
+        .upload-zone::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(transparent, rgba(80, 180, 255, 0.09), transparent);
+            transform: translate(-50%, -50%) rotate(0deg);
+            transition: all 0.6s ease;
+            opacity: 0;
+        }
+
+        .upload-zone:hover::before {
+            animation: rotateGlow 2s linear infinite;
+            opacity: 1;
+        }
+
+        @keyframes rotateGlow {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .upload-zone:hover {
+            border-color: #50b4ff;
+            background: rgba(80, 180, 255, 0.08);
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 
+                0 20px 40px rgba(80, 180, 255, 0.10),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .upload-zone.drag-over {
+            border-color: #2563eb;
+            background: rgba(37, 99, 235, 0.10);
+            transform: scale(1.05);
+            box-shadow: 
+                0 0 60px rgba(80, 180, 255, 0.18),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        .upload-icon {
+            font-size: 5rem;
+            margin-bottom: 24px;
+            display: block;
+            transition: all 0.4s ease;
+            animation: iconFloat 3s ease-in-out infinite;
+            position: relative;
+            z-index: 2;
+        }
+
+        @keyframes iconFloat {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-8px) rotate(5deg); }
+        }
+
+        .upload-zone:hover .upload-icon {
+            transform: scale(1.2) rotate(10deg);
+            filter: drop-shadow(0 0 20px #50b4ff88);
+        }
+
+        .upload-text {
+            color: #1e293b;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .upload-subtext {
+            color: #2563eb;
+            font-size: 1rem;
+            font-weight: 400;
+            position: relative;
+            z-index: 2;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .btn-container {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #2563eb 0%, #50b4ff 100%);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(80, 180, 255, 0.13);
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 16px 48px rgba(80, 180, 255, 0.18);
+        }
+
+        .btn:active {
+            transform: translateY(0) scale(1.02);
+        }
+
+        .file-info {
+            display: none;
+            background: rgba(240, 248, 255, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid #b6e3ff;
+            border-radius: 16px;
+            padding: 32px;
+            margin-top: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .file-info::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(180deg, #2563eb, #ff5078);
+            border-radius: 0 4px 4px 0;
+        }
+
+        .file-name {
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 8px;
+            font-size: 1.2rem;
+        }
+
+        .file-size {
+            color: #2563eb;
+            font-size: 1rem;
+            margin-bottom: 24px;
+        }
+
+        .progress-container {
+            margin: 24px 0;
+        }
+
+        .progress-label {
+            color: #1e293b;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0f2fe;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #2563eb, #50b4ff, #ff5078);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: progressShimmer 2s ease-in-out infinite;
+        }
+
+        @keyframes progressShimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .success-message {
+            display: none;
+            color: #10b981;
+            font-weight: 600;
+            font-size: 1.1rem;
+            text-align: center;
+            margin-top: 24px;
+            padding: 16px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 12px;
+            animation: successPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes successPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        /* Floating particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #50b4ff;
+            border-radius: 50%;
+            animation: particleFloat 8s linear infinite;
+        }
+
+        @keyframes particleFloat {
+            0% {
+                transform: translateY(100vh) translateX(0px) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) translateX(100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .upload-card {
+                padding: 32px 24px;
+                margin: 16px;
+            }
+            
+            .title {
+                font-size: 2.5rem;
+            }
+            
+            .upload-zone {
+                padding: 60px 24px;
+            }
+
+            .upload-icon {
+                font-size: 4rem;
+            }
+
+            .btn-container {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="particles" id="particles"></div>
+    
+    <div class="main-container">
+        <div class="upload-card">
+            <div class="header">
+                <h1 class="title">Upload Studio</h1>
+                <p class="subtitle">Transform your videos with our cutting-edge platform</p>
+            </div>
+            
+            <div class="upload-zone" id="uploadZone">
+                <div class="upload-icon">🎬</div>
+                <div class="upload-text">Drop your masterpiece here</div>
+                <div class="upload-subtext">or click to browse • MP4, AVI, MOV, WebM • Max 500MB</div>
+            </div>
+            
+            <input type="file" id="fileInput" accept="video/*" />
+            
+            <div class="btn-container">
+                <button class="btn" onclick="document.getElementById('fileInput').click()">
+                    Choose Video File
+                </button>
+            </div>
+            
+            <div class="file-info" id="fileInfo">
+                <div class="file-name" id="fileName"></div>
+                <div class="file-size" id="fileSize"></div>
+                <div class="progress-container">
+                    <div class="progress-label">
+                        <span>Uploading...</span>
+                        <span id="progressPercent">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+                <div class="success-message" id="successMessage">
+                    ✨ Your video has been uploaded successfully!
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize particles
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 15;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 8 + 's';
+                particle.style.animationDuration = (8 + Math.random() * 4) + 's';
+                
+                // Rayv blue, red, white
+                const colors = ['#50b4ff', '#ff5078', '#ffffff'];
+                particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+                
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        createParticles();
+
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const progressFill = document.getElementById('progressFill');
+        const progressPercent = document.getElementById('progressPercent');
+        const successMessage = document.getElementById('successMessage');
+
+        // Click to upload
+        uploadZone.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // Drag and drop functionality
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('drag-over');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('drag-over');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('drag-over');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        // File input change event
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            // Check if it's a video file
+            if (!file.type.startsWith('video/')) {
+                alert('Please select a valid video file.');
+                return;
+            }
+
+            // Check file size (500MB limit)
+            const maxSize = 500 * 1024 * 1024;
+            if (file.size > maxSize) {
+                alert('File size must be less than 500MB.');
+                return;
+            }
+
+            // Display file information
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            fileInfo.style.display = 'block';
+            successMessage.style.display = 'none';
+
+            // Animate the card appearance
+            fileInfo.style.opacity = '0';
+            fileInfo.style.transform = 'translateY(20px)';
+            
+            setTimeout(() => {
+                fileInfo.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                fileInfo.style.opacity = '1';
+                fileInfo.style.transform = 'translateY(0)';
+            }, 100);
+
+            // Simulate upload progress
+            simulateUpload();
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function simulateUpload() {
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 8 + 2;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        successMessage.style.display = 'block';
+                        successMessage.style.opacity = '0';
+                        successMessage.style.transform = 'scale(0.8)';
+                        
+                        setTimeout(() => {
+                            successMessage.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                            successMessage.style.opacity = '1';
+                            successMessage.style.transform = 'scale(1)';
+                        }, 100);
+                    }, 500);
+                }
+                progressFill.style.width = progress + '%';
+                progressPercent.textContent = Math.round(progress) + '%';
+            }, 150);
+        }
+    </script>
+</body>
+</html>
+
