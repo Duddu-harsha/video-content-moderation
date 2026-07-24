@@ -1,198 +1,146 @@
-# video-content-moderation😃
-🎥 AI-Powered Video Content Moderation & Trimming
-An automated system for classifying videos as Safe or Unsafe using machine learning, with support for batch analysis and trimming based on content moderation results.
+# Video Content Moderation
 
-🚀 How to Use
-1. Train the Model
-Run train_model.py.
+An automated system for classifying videos as **Safe** or **Unsafe** using classical machine learning. The system supports single-video inference, batch processing, and content-based trimming based on moderation results.
 
-It reads video metadata and labels from val.csv
-Extracts various video features
-Trains a RandomForestClassifier with hyperparameter tuning
-Saves the model as video_classifier_v2.pkl
+## Overview
 
-2. Analyze a Single Video
-Use test_video_classifier.py with the --video argument to classify a single video using the saved model.
+Moderating video content at scale is one of the more difficult challenges in digital media, given the volume, format diversity, and sensitivity of the material involved. This project addresses that challenge with a fully automated, frame-level moderation pipeline that flags harmful content while minimizing manual review.
 
-3. Batch Analyze a Folder
-Use test_video_classifier.py with the --folder argument to process all videos in a folder and save the results in a CSV file.
+Rather than treating each video as a single unit, the system analyzes video frame-by-frame — typically sampling at one frame per second — so that inappropriate or harmful segments can be detected even when they occur briefly within a longer video. Each sampled frame is scored using handcrafted visual features and a trained classifier, producing a confidence-weighted **Safe / Unsafe** verdict for the video.
 
-🧠 Feature Extraction
-The system extracts these features from videos:
-HOG (Histogram of Oriented Gradients)
-ORB (Keypoints and Descriptors)
-Motion analysis using Optical Flow
-Color statistics: mean, standard deviation, skewness, entropy
-Edge features: Canny edge and Sobel histogram
-Scene change rate
+The pipeline is feature-based rather than deep-learning-based, which keeps it computationally efficient, interpretable, and deployable without GPU infrastructure.
 
-Metadata: fps, resolution, duration, etc.
+## Performance
 
-📊 Dataset Format
-Data should be stored in val.csv with the following columns:
+| Metric | Result |
+|---|---|
+| Overall accuracy | 96% |
+| Precision (unsafe content) | 100% (zero false positives) |
+| AUC-ROC | 0.9996 |
+| Throughput | ~1.02 videos/second on standard hardware |
+| Batch scale tested | 1,753 videos processed in a single run |
 
-Video_id: filename without extension
+When the model flags content as unsafe, it is consistently correct, which minimizes the risk of incorrectly restricting appropriate content.
 
-Label: Safe or Unsafe
+## How It Works
 
-Category: category label used in utility scripts
+### 1. Train the Model
+```bash
+python train_model.py
+```
+- Reads video metadata and labels from `val.csv`
+- Extracts visual features from each video
+- Trains a `RandomForestClassifier` with hyperparameter tuning via grid search and 5-fold cross-validation
+- Saves the trained model as `video_classifier_v2.pkl`
 
-📌 Utilities
-categorynumcalc.py: Counts the number of unique categories
-get_duration.py: Computes video durations in a folder
-videoselectioncode.py: Selects 5 videos per category for analysis
+### 2. Classify a Single Video
+```bash
+python test_video_classifier.py --video path/to/video.mp4
+```
 
-✅ Inference Example
-To make predictions:
-Load the model with joblib
-Extract features from a video using extract_video_features
-Use the model to predict the label and confidence
-Output: "Safe" or "Unsafe" along with a confidence score
+### 3. Batch Process a Folder
+```bash
+python test_video_classifier.py --folder path/to/videos/
+```
+Results are written to a CSV file for downstream review or integration.
 
-📦 Requirements
-Python 3.8 or higher
-OpenCV
-NumPy
-Pandas
-Scikit-learn
-Joblib
-Tqdm
+## Feature Extraction
 
-                  WRITE UP 
+The classifier is trained on the following visual and metadata features:
 
+| Category | Features |
+|---|---|
+| Motion | Optical flow analysis |
+| Color | Mean, standard deviation, skewness, entropy |
+| Edges | Canny edge detection, Sobel orientation histogram |
+| Texture / Objects | HOG (Histogram of Oriented Gradients), ORB keypoints and descriptors |
+| Structure | Scene change rate |
+| Metadata | Frame rate, resolution, duration |
 
-🎯 AI-Powered Automated Video Content Moderation System
-🔍 Project Overview
-In the age of digital media, moderating video content at scale has become one of the most pressing challenges. Our project aims to tackle this by developing a fully automated, intelligent video moderation system capable of detecting and classifying harmful content with minimal human intervention.
+## Dataset Format
 
-Rather than analyzing videos as single units, our system dissects each video frame-by-frame—typically at a rate of one frame per second. This granular analysis enables us to detect inappropriate or harmful segments even if they occur briefly within longer videos. Each selected frame is analyzed using a combination of handcrafted visual features and machine learning, producing high-confidence predictions that categorize content by type of harm (e.g., violence, explicit material, abuse) and risk level (low, medium, high).
+Training data is expected in `val.csv` with the following columns:
 
-This frame-level approach enables us to deliver detailed, risk-aware moderation that goes beyond simple binary classification. The system integrates smoothly with existing workflows using simple CSV-based mappings and supports both single and batch video analysis without requiring complex infrastructure.
+| Column | Description |
+|---|---|
+| `Video_id` | Filename without extension |
+| `Label` | `Safe` or `Unsafe` |
+| `Category` | Category label used by utility scripts |
 
-🧠 Technical Approach
-Our system follows a feature-based machine learning pipeline instead of relying on deep learning, making it computationally efficient and interpretable. Key steps include:
+## Utility Scripts
 
-Frame Sampling: Extracts key frames at regular intervals to represent the entire video while minimizing processing load.
+| Script | Purpose |
+|---|---|
+| `categorynumcalc.py` | Counts the number of unique categories in the dataset |
+| `get_duration.py` | Computes video durations for a given folder |
+| `videoselectioncode.py` | Selects a fixed sample (5 videos) per category for analysis |
 
-Visual Feature Extraction:
+## Inference Example
 
-Motion Patterns (Optical Flow)
+```python
+import joblib
+from feature_extraction import extract_video_features
 
-Color Statistics (mean, std, skewness, entropy)
+model = joblib.load("video_classifier_v2.pkl")
+features = extract_video_features("path/to/video.mp4")
+prediction = model.predict([features])
+confidence = model.predict_proba([features])
 
-Edge Detection (Canny, Sobel orientation)
+print(f"Label: {prediction[0]}, Confidence: {confidence.max():.2f}")
+```
 
-Object & Texture Descriptors (HOG, ORB)
+## Requirements
 
-Metadata (frame rate, resolution, duration)
+- Python 3.8+
+- OpenCV
+- NumPy
+- Pandas
+- Scikit-learn
+- Joblib
+- Tqdm
 
-Model Training: A RandomForestClassifier is trained on these features with hyperparameter tuning to maximize accuracy while minimizing false positives.
+Install with:
+```bash
+pip install -r requirements.txt
+```
 
-Inference: Videos are scored for safety, assigned a risk level, and flagged accordingly.
+## Technical Approach
 
-CSV-based Results: Classifications and confidence scores are output in structured CSV files for easy integration and review.
+**Frame sampling.** Key frames are extracted at regular intervals to represent the full video while keeping processing load manageable.
 
-⚙️ Technical Challenges & Solutions
-🔄 Computational Efficiency
-Processing every frame is resource-intensive. We optimized this by:
+**Feature extraction.** Motion, color, edge, texture, and metadata features are computed per frame (see [Feature Extraction](#feature-extraction)).
 
-Using adaptive frame sampling
+**Model training.** A `RandomForestClassifier` is trained on the extracted features with hyperparameter tuning to maximize accuracy while minimizing false positives. Class imbalance is addressed through balanced subsample weighting, and 16 candidate configurations were evaluated across 5-fold cross-validation.
 
-Parallelizing feature extraction using ProcessPoolExecutor
+**Inference.** Each video receives a safety verdict, a risk level, and a confidence score, output in structured CSV form for easy integration into existing review workflows.
 
-Caching features to avoid redundant computations
+## Design Considerations
 
-🎯 Reducing False Positives
-False alarms can erode trust. To address this:
+**Computational efficiency.** Processing every frame is resource-intensive, so the pipeline uses adaptive frame sampling, parallelizes feature extraction with `ProcessPoolExecutor`, and caches features to avoid redundant computation.
 
-We added confidence thresholds
+**False positive control.** Confidence thresholds, multi-frame voting, and class balancing during training work together to reduce false alarms, which is reflected in the model's 100% precision on unsafe content.
 
-Implemented multi-feature voting across frames
+**Ambiguity handling.** The model is trained on diverse real-world samples and weights motion and temporal features to better capture context in visually ambiguous frames.
 
-Used class balancing during model training
+**Scalability.** The pipeline handles missing or corrupted frames gracefully and processes videos in parallel, allowing it to scale across large batches without GPU dependency.
 
-🤔 Handling Ambiguity
-Some frames are visually ambiguous. We:
+**Privacy.** Only classification results and confidence scores are surfaced by default; visual previews are optional, reducing moderator exposure to harmful content.
 
-Trained the model on diverse real-world samples
+## Why This Approach
 
-Emphasized motion and temporal features to capture context
+- **Protects moderators** by automating the initial screening pass, reducing psychological exposure to harmful content.
+- **Scales without GPUs** — throughput scales roughly linearly with additional hardware.
+- **Delivers nuanced decisions** — risk scores and harm-type labels support graduated responses (e.g., restrict vs. remove) rather than a binary flag alone.
+- **Is transparent** — every classification includes a confidence score, helping teams prioritize human review.
+- **Integrates easily** — CSV-based input/output works with most existing content management workflows.
 
-📏 Scalability
-Videos come in all sizes and formats. Our pipeline supports:
+## Future Improvements
 
-Robust handling of missing/corrupted frames
+- Improve recall for unsafe content detection
+- Expand feature extraction to support finer-grained category classification
+- Add real-time processing support
+- Build visualization tooling for detected content patterns
 
-Scalable architecture that processes videos in parallel
+## License
 
-🔐 Privacy & Security
-To reduce human exposure to harmful visuals:
-
-Only key information (e.g., classification and confidence) is shared
-
-Visual previews are optional and protected
-
-🌟 Why This System Stands Out
-✅ Protects Moderators
-Reduces psychological exposure to harmful content by automating the initial screening.
-
-🚀 Scalable & Efficient
-Handles thousands of videos without GPU dependency. New hardware scales performance linearly.
-
-🎯 Nuanced Decisions
-Provides risk scores and harm type labels, not just Safe/Unsafe flags—enabling better moderation decisions (e.g., restrict vs. remove).
-
-📈 Transparent & Trustworthy
-Every classification includes a confidence score, helping teams prioritize human review efficiently.
-
-🔧 Easy to Integrate
-Works out-of-the-box with content management systems via CSV mapping—ideal for platforms of any size.
-
-🧩 Final Words
-This project demonstrates how classical machine learning, when engineered thoughtfully, can offer powerful, transparent, and resource-efficient solutions to some of the toughest challenges in modern content moderation. It’s modular, privacy-conscious, and designed to scale—empowering digital platforms to create safer environments without sacrificing speed or accuracy.
-
-
-  🚀 Performance Highlights
-Our model demonstrates exceptional performance in video content moderation:
-
-96% Overall Accuracy on the test dataset
-100% Precision for unsafe content identification (zero false positives)
-Near-Perfect AUC-ROC Score of 0.9996 showing excellent discrimination capability
-Efficient Processing at ~1.02 videos per second on standard hardware
-Highly Scalable with 1,753 videos successfully processed in a single batch
-
-📊 Results Summary
-
-![WhatsApp Image 2025-04-21 at 00 12 25_1931fcfd](https://github.com/user-attachments/assets/741a5d68-c6e9-4566-81c0-9e30853e9f5d)
-
-The system achieves perfect precision for unsafe content identification, meaning when our model flags content as unsafe, it is consistently correct. This significantly reduces the risk of incorrectly restricting appropriate content.
-💡 Technical Approach
-
-Comprehensive Feature Extraction capturing nuanced patterns across video frames
-Advanced Random Forest Classification with optimized hyperparameters
-Class Imbalance Handling through balanced subsample weighting
-Extensive GridSearch Cross-Validation for parameter tuning
-
-The model identifies the most predictive features automatically, with the top features demonstrating significant discriminative power for content classification.
-🛠️ Implementation Details
-
-Data Processing: Robust pipeline handling 1,756 videos with minimal failures
-Model Optimization: 16 candidate configurations evaluated across 5-fold cross-validation
-Feature Importance Analysis: Clear identification of the most significant predictors
-Fast Execution: Complete pipeline execution in under 30 minutes for large dataset
-Ready-to-Use: Includes example inference code for seamless integration
-
-🔧 Usage Example
-
-
-![WhatsApp Image 2025-04-21 at 00 13 07_dddabf42](https://github.com/user-attachments/assets/29ddf25d-e34c-439f-9123-b320193f5600)
-
-🔍 Future Improvements
-
-Fine-tuning recall for unsafe content detection
-Expanding feature extraction for better category classification
-Implementing real-time processing capabilities
-Adding visualization tools for detected content patterns
-
-
-This project demonstrates the power of machine learning for content moderation, enabling platforms to create safer digital environments while reducing the burden on human moderators.
+This project is licensed under the MIT License. See `LICENSE` for details.
